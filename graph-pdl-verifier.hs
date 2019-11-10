@@ -7,9 +7,13 @@ import Data.List (inits, tails)
 pdl = "beta;U(gama)(alfa;gama;bunta)"
 pdl2 = "alfa;gama;bunta"
 
-pdlFT = "*(alfa);beta;*(alfa)" -- -> (alfa;beta)
+pdlFT = "*(*(alfa;beta);omega;U(*(teta))(psi);*(U(thiago)(caio)))" -- -> (alfa;beta)
 
-gFT = "alfa;alfa;beta"
+gFT = "alfa;beta;alfa;beta;omega;psi;thiago;thiago;caio;alfa;beta;alfa;beta;omega;teta;teta;thiago;thiago;caio"
+
+pdlFT1 = "*(alfa;beta)"
+pdlFT2 = "(omega;U(teta)(psi))"
+pdlFT3 = "*(U(thiago)(caio))"
 
 pdl4 = "U(alfa;gama;bunta)(teta;U(gama;U(fi)(psi))(omega))"
 
@@ -116,20 +120,23 @@ multiplica n pfch
     | otherwise = (head pfch) ++ ";" ++ (multiplica (n - 1) pfch)
 
 fecho :: Int -> [String] -> String -> Bool
-fecho (-1) pfch g = False
+--fecho (-1) pfch g = False
 --fecho 0 pfch g = verify (multiplica (0) (pfch)) (g)
 fecho n pfch g
+    | n == (-1) = False
     | verify (multiplica (n) (pfch)) g == True = True
     | otherwise = fecho (n - 1) (pfch) (g)
 
 verify :: String -> String -> Bool
 verify "" "" = True
 verify "" _ = False
-verify _ "" = False
+--verify _ "" = False
 verify p g
     | hd p == "*" = fecho (countSemiColonPlusOne g) (concatena1(splitChildren1 (tail p))) g
     | hd p == "U" = nonDetChoice (concatena (splitChildren (tail p))) (g) -- -> nonDetChoice ["(gama;U(omega)(teta))","(alfa;gama;bunta)"] graph
     | head (splitOn ";" p) == head (splitOn ";" g) = verify (tl(tail (splitOn ";" p))) (tl(tail (splitOn ";" g))) 
     | otherwise = False
 
--- concatena1(splitChildren1(tail pdlFT))   ->     ["U(alfa)(beta)"]
+-- concatena1(splitChildren1(tail pdlFT))   ->     ["alfa"]
+
+-- countSemiColonPlusOne   ->   1
