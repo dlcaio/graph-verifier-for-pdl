@@ -8,8 +8,9 @@ pdl = "beta;U(gama)(alfa;gama;bunta)"
 pdl2 = "alfa;gama;bunta"
 
 pdlFT = "*(*(alfa;beta);omega;U(*(teta))(psi);*(U(thiago)(caio)))" -- -> (alfa;beta)
-
+pdlFT222 = "*(alfa;beta);omega;U(*(teta))(psi);*(thiago)"
 gFT = "alfa;beta;alfa;beta;omega;psi;thiago;thiago;caio;alfa;beta;alfa;beta;omega;teta;teta;thiago;thiago;caio"
+gFTa = "alfa;beta;alfa;beta;omega;psi"
 
 pdlFT1 = "*(alfa;beta)"
 pdlFT2 = "(omega;U(teta)(psi))"
@@ -17,9 +18,12 @@ pdlFT3 = "*(U(thiago)(caio))"
 
 pdl4 = "U(alfa;gama;bunta)(teta;U(gama;U(fi)(psi))(omega))"
 
+gList = [[["alfa", "1", "2"], ["beta", "2", "3"]], [["omega", "1", "4"]]]
 
+gFTAList = [["alfa", "1", "2"], ["beta", "2", "3"], ["alfa", "2", "3"], ["beta", "2", "3"], ["omega", "2", "3"], ["omega", "2", "3"], ["psi", "2", "3"], ["thiago", "2", "3"], ["thiago", "2", "3"]]
 
-
+k = "beta;*(alfa)"
+kkk = [["beta", "1", "2"], ["alfa", "1", "2"]]
 
 pdl3 = "alfa;U(gama;U(omega)(teta))(alfa;gama;bunta);bunta;alfa"
 graph = "alfa;alfa;gama;bunta;bunta;alfa;beta"
@@ -93,8 +97,8 @@ concatena1 a
     | length a >= 2 = [removeParenthesis (head a)] ++ tail a
     | otherwise = [removeParenthesis (head a)]
  
-nonDetChoice :: [String] -> String -> Bool
-nonDetChoice _ "" = False
+nonDetChoice :: [String] -> [[String]] -> Bool
+nonDetChoice _ [] = False
 nonDetChoice p g
     | verify (head p) (g) == True = True -- -> verify ("(gama;U(omega)(teta))") (graph)
     | verify (head (tail p)) (g) == True = True
@@ -119,7 +123,7 @@ multiplica n pfch
     | n == 1 && length pfch < 2 = (head pfch) ++ (multiplica (n - 1) pfch)
     | otherwise = (head pfch) ++ ";" ++ (multiplica (n - 1) pfch)
 
-fecho :: Int -> [String] -> String -> Bool
+fecho :: Int -> [String] -> [[String]] -> Bool
 --fecho (-1) pfch g = False
 --fecho 0 pfch g = verify (multiplica (0) (pfch)) (g)
 fecho n pfch g
@@ -127,16 +131,32 @@ fecho n pfch g
     | verify (multiplica (n) (pfch)) g == True = True
     | otherwise = fecho (n - 1) (pfch) (g)
 
-verify :: String -> String -> Bool
-verify "" "" = True
-verify "" _ = False
---verify _ "" = False
+aaa :: [[String]] -> [[String]]
+aaa [] = [["", "", ""]]
+aaa a = a
+
+verify :: String -> [[String]] -> Bool
+verify "" [] = True
+--verify "" [["", "", ""]] = True
+--verify "" _ = False
+--verify p [[]] = verify (p) ([["", "", ""]])
+verify "" _ =  False
 verify p g
-    | hd p == "*" = fecho (countSemiColonPlusOne g) (concatena1(splitChildren1 (tail p))) g
+    | hd p == "*" = fecho (length g) (concatena1(splitChildren1 (tail p))) g
     | hd p == "U" = nonDetChoice (concatena (splitChildren (tail p))) (g) -- -> nonDetChoice ["(gama;U(omega)(teta))","(alfa;gama;bunta)"] graph
-    | head (splitOn ";" p) == head (splitOn ";" g) = verify (tl(tail (splitOn ";" p))) (tl(tail (splitOn ";" g))) 
+--    | head (splitOn ";" p) == head (splitOn ";" g) = verify (tl(tail (splitOn ";" p))) (tl(tail (splitOn ";" g))) 
+    | head (splitOn ";" p) == head (head (aaa g)) = verify (tl(tail (splitOn ";" p))) (tail g)
     | otherwise = False
+
+--verifyOuter :: String -> [[[String]]] -> Bool
+--verifyOuter p gL
+--    | verify (p) ()
 
 -- concatena1(splitChildren1(tail pdlFT))   ->     ["alfa"]
 
 -- countSemiColonPlusOne   ->   1
+
+main :: IO ()
+main = do
+    putStrLn "hello"
+    putStrLn "world"
