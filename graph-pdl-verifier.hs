@@ -9,6 +9,9 @@ pdl2 = "alfa;gama;bunta"
 
 pdlFT = "*(*(alfa;beta);omega;U(*(teta))(psi);*(U(thiago)(caio)))" -- -> (alfa;beta)
 pdlFT222 = "*(alfa;beta);omega;U(*(teta))(psi);*(thiago)"
+pedro = "U(*(teta))(beta)"
+pedrinho = "*(teta)"
+
 gFT = "alfa;beta;alfa;beta;omega;psi;thiago;thiago;caio;alfa;beta;alfa;beta;omega;teta;teta;thiago;thiago;caio"
 gFTa = "alfa;beta;alfa;beta;omega;psi"
 
@@ -17,11 +20,11 @@ pdlFT2 = "(omega;U(teta)(psi))"
 pdlFT3 = "*(U(thiago)(caio))"
 
 pdl4 = "U(alfa;gama;bunta)(teta;U(gama;U(fi)(psi))(omega))"
+gugu = []
+gList = [[["omega", "1", "2"]]]
 
-gList = [[["alfa", "1", "2"], ["beta", "2", "3"]], [["omega", "1", "4"]]]
-
-gFTAList = [["alfa", "1", "2"], ["beta", "2", "3"], ["alfa", "2", "3"], ["beta", "2", "3"], ["omega", "2", "3"], ["omega", "2", "3"], ["psi", "2", "3"], ["thiago", "2", "3"], ["thiago", "2", "3"]]
-
+gFTAList = [[["eitcha", "1", "2"], ["beta", "2", "3"], ["alfa", "2", "3"], ["beta", "2", "3"], ["omega", "2", "3"], ["omega", "2", "3"], ["psi", "2", "3"], ["thiago", "2", "3"], ["thiago", "2", "3"]], [["omega", "1", "15"]]]
+uiui = [["alfa", "1", "2"], ["beta", "2", "3"], ["alfa", "2", "3"], ["beta", "2", "3"], ["omega", "2", "3"], ["omega", "2", "3"], ["psi", "2", "3"], ["thiago", "2", "3"], ["thiago", "2", "3"]]
 k = "beta;*(alfa)"
 kkk = [["beta", "1", "2"], ["alfa", "1", "2"]]
 
@@ -45,6 +48,12 @@ gggg = "beta;omega;psi;alfa;psi;um"
 
 pppppp = "U(alfa)(beta)"
 gggggg = "alfa"
+
+tp1 = ""
+tg1 = []
+
+tp2 = "U(alfa)(beta)"
+tg2 = [[["alfa", "1", "2"]], [["beta", "1", "2"]]]
 
 
 
@@ -98,7 +107,7 @@ concatena1 a
     | otherwise = [removeParenthesis (head a)]
  
 nonDetChoice :: [String] -> [[String]] -> Bool
-nonDetChoice _ [] = False
+--nonDetChoice _ [] = False
 nonDetChoice p g
     | verify (head p) (g) == True = True -- -> verify ("(gama;U(omega)(teta))") (graph)
     | verify (head (tail p)) (g) == True = True
@@ -148,9 +157,14 @@ verify p g
     | head (splitOn ";" p) == head (head (aaa g)) = verify (tl(tail (splitOn ";" p))) (tail g)
     | otherwise = False
 
---verifyOuter :: String -> [[[String]]] -> Bool
---verifyOuter p gL
---    | verify (p) ()
+
+    
+verifyOuter :: Int -> String -> [[[String]]] -> Bool
+verifyOuter 0 p [] = verify (p) []
+verifyOuter 1 p [] = False
+verifyOuter _ p gL
+    | verify (p) (head gL) == True = True
+    | otherwise = verifyOuter (1) (p) (tail gL)
 
 -- concatena1(splitChildren1(tail pdlFT))   ->     ["alfa"]
 
