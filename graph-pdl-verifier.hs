@@ -1,14 +1,32 @@
 import Data.List
 import System.IO
-import Data.Maybe
 import Data.List.Split
-import Data.List (inits, tails)
 
+-- TRABALHO DE LINGUAGENS DE PROGRAMAÇÃO
+-- por Caio Della Libera - 117031069 e Thiago do Prado - 117031024
+
+-- A entrada do programa é da forma: ehValido (p) (g)
+--      onde ehValido é uma função que recebe o programa pdl p e o grafo g e, caso o grafo seja valido para o programa, retorna o primeiro caminho do grafo que satisfaz o programa pdl.
+--      caso  o grafo seja inválido, a função retorna as transicoes que impossibilitaram o grafo de ser válido, para cada caminho
+--  
+-- p é o PROGRAMA PDL
+--      implementado em uma estrutura de string,
+--      onde é implementado os operadores * -> fecho transitivo, U -> escolha-não-determinísitca, e ; -> que denota o fim de uma instrução pdl e o início de outra.
+--      o fecho transitivo é implementado na seguinte forma: *(<instrução>)
+--      a escolha não-determinística é implementada na seguinte forma: U(<instrução>)(<instrução>)
+--      um exemplo de programa pdl válido é: "*(U(alfa;beta;U(omega)(teta;beta))(*(fi)))"
+-- g é um GRAFO
+--      implementado em uma estrutura de lista de listas de listas de 3 valores String, onde, na lista mais interna, o primeiro valor é a transição do grafo, o segundo é o nó de origem e o terceiro
+--      é o nó de destino. as listas intermediárias consistem de caminhos sem bifurcações do grafo. a lista exterior contém todos os caminhos sem bifurcações no grafo.
+--      um exemplo de grafo válido é: [[["alfa", "1", "2"], ["beta", "2", "3"]], [["alfa", "1", "4"], ["omega", "4", "5"]], [["alfa", "1", "2"], ["psi", "2", "6"]]]
+
+
+-- Exemplos de teste já implementados na main
 
 pp1 = ""
 
-gg10 = [[]] -- > VALIDO
-gg11 = [[["alfa", "1", "2"]]] -- > INVALIDO
+gg11 = [[]] -- > VALIDO
+gg12 = [[["alfa", "1", "2"]]] -- > INVALIDO
 ------------
 pp2 = "alfa"
 
@@ -29,7 +47,7 @@ pp4 = "alfa;U(beta)(gama)"
 
 gg41 = [[["alfa", "1", "2"], ["beta", "2", "3"]]] -- > VALIDO
 gg42 = [[["alfa", "1", "2"], ["gama", "2", "3"]]] -- > VALIDO
-gg43 = [[["alfa", "1", "2"], ["beta", "2", "3"]], [["alfa", "1", "4"], ["gama", "4", "5"]]] -- > VALIDO
+gg43 = [[["alfa", "1", "2"], ["beta", "2", "3"]], [["alfa", "1", "2"], ["gama", "2", "4"]]] -- > VALIDO
 -------------------------------------------------------------------------------------------------------
 
 pp5 = "alfa;*(beta)"
@@ -60,7 +78,14 @@ pp8 = "*(U(U(alfa)(beta))(U(gama)(teta)))"
 
 gg81 = [[]] -- > VALIDO
 gg82 = [[["alfa", "1", "2"], ["alfa", "2", "3"], ["beta", "3", "4"], ["teta", "4", "5"]]]  -- > VALIDO
+-----------------------------------------------------------------------------------------
 
+pp9 = "alfa;beta"
+
+gg91 = [[["alfa", "1", "2"]], [["alfa", "1", "4"], ["omega", "4", "5"]], [["alfa", "1", "2"], ["psi", "2", "6"]]] -- > INVALIDO
+------------------------------------------------------------------------------------------------------------------
+
+-- Funções do programa
 
 parseaParentesesEscND :: String -> [String]
 parseaParentesesEscND str = vai 0 "" 0 str
@@ -122,12 +147,6 @@ removeParenteses a
     | headAlt a == "(" =  reverse(tail(reverse(tail a)))
     | otherwise = a
 
-contaPontoEVirgula :: String -> Int
-contaPontoEVirgula "" = 1
-contaPontoEVirgula a
-    | headAlt a == ";" = 1 + contaPontoEVirgula (tail a)
-    | otherwise = contaPontoEVirgula (tail a)
-
 multiplica :: Int -> [String] -> String
 multiplica 0 pfch
     | length pfch >= 2 = tail(head (tail pfch))
@@ -142,13 +161,13 @@ fecho n pfch g
     | verifica (multiplica (n) (pfch)) g == (True, [""]) = verifica (multiplica (n) (pfch)) g
     | otherwise = fecho (n - 1) (pfch) (g)
 
-aaa :: [[String]] -> [[String]]
-aaa [] = [["", "", ""]]
-aaa a = a
+seListaVaziaRetListaTransicaoVazia :: [[String]] -> [[String]]
+seListaVaziaRetListaTransicaoVazia [] = [["", "", ""]]
+seListaVaziaRetListaTransicaoVazia a = a
 
-ccc :: [[String]] -> [String]
-ccc [] = ["", "", ""]
-ccc c = head c
+seListaVaziaRetTransicaoVazia :: [[String]] -> [String]
+seListaVaziaRetTransicaoVazia [] = ["", "", ""]
+seListaVaziaRetTransicaoVazia c = head c
 
 verifica :: String -> [[String]] -> (Bool, [String])
 verifica "" [] = (True, [""])
@@ -156,14 +175,11 @@ verifica "" g =  (False, (head g))
 verifica p g
     | headAlt p == "*" = fecho (length g) (formataFecho(parseaParentesesFecho (tail p))) g
     | headAlt p == "U" = escND (formataEscND (parseaParentesesEscND (tail p))) (g) 
-    | head (splitOn ";" p) == head (head (aaa g)) = verifica (intercalaLisEmStr(tail (splitOn ";" p))) (tail g)
-    | otherwise = (False, (ccc g))
+    | head (splitOn ";" p) == head (head (seListaVaziaRetListaTransicaoVazia g)) = verifica (intercalaLisEmStr(tail (splitOn ";" p))) (tail g)
+    | otherwise = (False, (seListaVaziaRetTransicaoVazia g))
 
-get :: (Bool, [String]) -> Bool
-get (a, b) = a
-
-sumTuple :: (Int) -> (Int)
-sumTuple (a) = (a+1)
+incrementaValTupla :: (Int) -> (Int)
+incrementaValTupla (a) = (a+1)
     
 verificaFora :: (Int) -> Int -> String -> [[[String]]] -> [((Int), (Bool, [String]))]
 verificaFora _ 0 p [] = []
@@ -193,6 +209,10 @@ printa n w
     | n == 1 && pegaBool (head w) == False = printa (1) (tail w)
     | otherwise = "O grafo nao eh valido pois nao contempla o programa, devido a transicao " ++  head (pegaStr (head w)) ++ " entre os nohs " ++ head (tail (pegaStr (head w))) ++ " e " ++ head (tail (tail (pegaStr (head w)))) ++ " do caminho " ++ pegaInt (head w) ++ ". " ++ printa (0) (tail w)
 
+ehValido :: String-> [[[String]]] -> String
+ehValido p g = printa (true (v)) (v)
+    where v = verificaFora 0 0 p g
+------------------------------------------------------------------
 
 main :: IO ()
 main = do
@@ -201,9 +221,10 @@ main = do
     putStrLn "----------"
     putStrLn ""
     putStrLn ("pdl: " ++ pp1)
-    putStrLn ("grafo: " ++ sgg10)
+    putStrLn ("grafo: " ++ sgg11)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp1 gg10)) (verificaFora 0 0 pp1 gg10))
+    --putStrLn (printa (true (verificaFora 0 0 pp1 gg11)) (verificaFora 0 0 pp1 gg11))
+    putStrLn (ehValido (pp1) (gg11))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -211,9 +232,9 @@ main = do
     putStrLn "----------"
     putStrLn ""
     putStrLn ("pdl: " ++ pp1)
-    putStrLn ("grafo: " ++ sgg11)
+    putStrLn ("grafo: " ++ sgg12)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp1 gg11)) (verificaFora 0 0 pp1 gg11))
+    putStrLn (ehValido (pp1) (gg12))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -223,7 +244,7 @@ main = do
     putStrLn ("pdl: " ++ pp2)
     putStrLn ("grafo: " ++ sgg21)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp2 gg21)) (verificaFora 0 0 pp2 gg21))
+    putStrLn (ehValido (pp2) (gg21))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -233,7 +254,7 @@ main = do
     putStrLn ("pdl: " ++ pp2)
     putStrLn ("grafo: " ++ sgg22)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp2 gg22)) (verificaFora 0 0 pp2 gg22))
+    putStrLn (ehValido (pp2) (gg22))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -243,7 +264,7 @@ main = do
     putStrLn ("pdl: " ++ pp2)
     putStrLn ("grafo: " ++ sgg23)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp2 gg23)) (verificaFora 0 0 pp2 gg23))
+    putStrLn (ehValido (pp2) (gg23))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -253,7 +274,7 @@ main = do
     putStrLn ("pdl: " ++ pp2)
     putStrLn ("grafo: " ++ sgg24)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp2 gg24)) (verificaFora 0 0 pp2 gg24))
+    putStrLn (ehValido (pp2) (gg24))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -263,7 +284,7 @@ main = do
     putStrLn ("pdl: " ++ pp2)
     putStrLn ("grafo: " ++ sgg25)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp2 gg25)) (verificaFora 0 0 pp2 gg25))
+    putStrLn (ehValido (pp2) (gg25))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -273,7 +294,7 @@ main = do
     putStrLn ("pdl: " ++ pp3)
     putStrLn ("grafo: " ++ sgg31)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp3 gg31)) (verificaFora 0 0 pp3 gg31))
+    putStrLn (ehValido (pp3) (gg31))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -283,7 +304,7 @@ main = do
     putStrLn ("pdl: " ++ pp3)
     putStrLn ("grafo: " ++ sgg32)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp3 gg32)) (verificaFora 0 0 pp3 gg32))
+    putStrLn (ehValido (pp3) (gg32))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -293,7 +314,7 @@ main = do
     putStrLn ("pdl: " ++ pp4)
     putStrLn ("grafo: " ++ sgg41)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp4 gg41)) (verificaFora 0 0 pp4 gg41))
+    putStrLn (ehValido (pp4) (gg41))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -303,7 +324,7 @@ main = do
     putStrLn ("pdl: " ++ pp4)
     putStrLn ("grafo: " ++ sgg42)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp4 gg42)) (verificaFora 0 0 pp4 gg42))
+    putStrLn (ehValido (pp4) (gg42))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -313,7 +334,7 @@ main = do
     putStrLn ("pdl: " ++ pp4)
     putStrLn ("grafo: " ++ sgg43)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp4 gg43)) (verificaFora 0 0 pp4 gg43))
+    putStrLn (ehValido (pp4) (gg43))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -323,7 +344,7 @@ main = do
     putStrLn ("pdl: " ++ pp5)
     putStrLn ("grafo: " ++ sgg51)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp5 gg51)) (verificaFora 0 0 pp5 gg51))
+    putStrLn (ehValido (pp5) (gg51))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -333,7 +354,7 @@ main = do
     putStrLn ("pdl: " ++ pp5)
     putStrLn ("grafo: " ++ sgg52)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp5 gg52)) (verificaFora 0 0 pp5 gg52))
+    putStrLn (ehValido (pp5) (gg52))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -343,7 +364,7 @@ main = do
     putStrLn ("pdl: " ++ pp5)
     putStrLn ("grafo: " ++ sgg53)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp5 gg53)) (verificaFora 0 0 pp5 gg53))
+    putStrLn (ehValido (pp5) (gg53))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -353,7 +374,7 @@ main = do
     putStrLn ("pdl: " ++ pp5)
     putStrLn ("grafo: " ++ sgg54)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp5 gg54)) (verificaFora 0 0 pp5 gg54))
+    putStrLn (ehValido (pp5) (gg54))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -363,7 +384,7 @@ main = do
     putStrLn ("pdl: " ++ pp6)
     putStrLn ("grafo: " ++ sgg61)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp6 gg61)) (verificaFora 0 0 pp6 gg61))
+    putStrLn (ehValido (pp6) (gg61))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -373,7 +394,7 @@ main = do
     putStrLn ("pdl: " ++ pp6)
     putStrLn ("grafo: " ++ sgg62)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp6 gg62)) (verificaFora 0 0 pp6 gg62))
+    putStrLn (ehValido (pp6) (gg62))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -383,7 +404,7 @@ main = do
     putStrLn ("pdl: " ++ pp6)
     putStrLn ("grafo: " ++ sgg63)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp6 gg63)) (verificaFora 0 0 pp6 gg63))
+    putStrLn (ehValido (pp6) (gg63))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -393,7 +414,7 @@ main = do
     putStrLn ("pdl: " ++ pp6)
     putStrLn ("grafo: " ++ sgg64)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp6 gg64)) (verificaFora 0 0 pp6 gg64))
+    putStrLn (ehValido (pp6) (gg64))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -403,7 +424,7 @@ main = do
     putStrLn ("pdl: " ++ pp6)
     putStrLn ("grafo: " ++ sgg65)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp6 gg65)) (verificaFora 0 0 pp6 gg65))
+    putStrLn (ehValido (pp6) (gg65))
     putStrLn "\n"
     
     putStrLn "----------"
@@ -413,7 +434,7 @@ main = do
     putStrLn ("pdl: " ++ pp7)
     putStrLn ("grafo: " ++ sgg71)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp7 gg71)) (verificaFora 0 0 pp7 gg71))
+    putStrLn (ehValido (pp7) (gg71))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -423,7 +444,7 @@ main = do
     putStrLn ("pdl: " ++ pp7)
     putStrLn ("grafo: " ++ sgg72)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp7 gg72)) (verificaFora 0 0 pp7 gg72))
+    putStrLn (ehValido (pp7) (gg72))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -433,7 +454,7 @@ main = do
     putStrLn ("pdl: " ++ pp7)
     putStrLn ("grafo: " ++ sgg73)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp7 gg73)) (verificaFora 0 0 pp7 gg73))
+    putStrLn (ehValido (pp7) (gg73))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -443,7 +464,7 @@ main = do
     putStrLn ("pdl: " ++ pp8)
     putStrLn ("grafo: " ++ sgg81)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp8 gg81)) (verificaFora 0 0 pp8 gg81))
+    putStrLn (ehValido (pp8) (gg81))
     putStrLn "\n"
 
     putStrLn "----------"
@@ -453,19 +474,24 @@ main = do
     putStrLn ("pdl: " ++ pp8)
     putStrLn ("grafo: " ++ sgg82)
     putStrLn ""
-    putStrLn (printa (true (verificaFora 0 0 pp8 gg82)) (verificaFora 0 0 pp8 gg82))
+    putStrLn (ehValido (pp8) (gg82))
     putStrLn "\n"
-   
 
-    
-    
+    putStrLn "----------"
+    putStrLn "Exemplo 27"
+    putStrLn "----------"
+    putStrLn ""
+    putStrLn ("pdl: " ++ pp9)
+    putStrLn ("grafo: " ++ sgg91)
+    putStrLn ""
+    putStrLn (ehValido (pp9) (gg91))
+    putStrLn "\n"
 
-    
+-------------------------------------------------
 
-
-
-sgg10 = "[[]]" -- > VALIDO
-sgg11 = "[[[alfa, 1, 2]]]" -- > INVALIDO
+-- Exemplos dos grafos formatados para string
+sgg11 = "[[]]" -- > VALIDO
+sgg12 = "[[[alfa, 1, 2]]]" -- > INVALIDO
 ------------
 
 sgg21 = "[[]]" -- > INVALIDO
@@ -507,3 +533,5 @@ sgg73 = "[[[alfa, 1, 2], [beta, 2, 3]]]" -- > VALIDO
 
 sgg81 = "[[]]" -- > VALIDO
 sgg82 = "[[[alfa, 1, 2], [alfa, 2, 3], [beta, 3, 4], [teta, 4, 5]]]" -- > VALIDO
+
+sgg91 = "[[[alfa, 1, 2]], [[alfa, 1, 4], [omega, 4, 5]], [[alfa, 1, 2], [psi, 2, 6]]]" -- > INVALIDO
