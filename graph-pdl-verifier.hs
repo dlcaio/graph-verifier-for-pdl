@@ -3,7 +3,7 @@ import System.IO
 import Data.Maybe
 import Data.List.Split
 import Data.List (inits, tails)
-
+{-}
 pdl = "beta;U(gama)(alfa;gama;bunta)"
 pdl2 = "alfa;gama;bunta"
 
@@ -53,9 +53,28 @@ tp1 = ""
 tg1 = []
 
 tp2 = "U(alfa)(beta)"
-tg2 = [[["alfa", "1", "2"]], [["beta", "1", "2"]]]
+tg2 = [[["teta", "1", "2"]], [["beta", "1", "2"]]]
 
+tp3 = "*(*(alfa);omega;*(U(teta)(psi));U(*(gama))(sigma);U(alfa;beta)(delta;U(alfa)(delta));*(kkkkk))"
 
+tg3 = [[["alfa", "1", "2"], ["omega", "2", "3"], ["teta", "3", "4"], ["teta", "4", "5"], ["psi", "5", "6"], ["alfa", "6", "7"]], [["omega", "1", "8"], ["alfa", "8", "9"], ["beta", "9", "10"], ["kkkkk", "10", "11"]]]
+
+op = "*(teta);(omega);beta;teta)"
+
+og = [["teta", "1", "2"], ["omega", "4", "5"], ["beta", "6", "7"]]
+
+op2 = "*(U(alfa)(beta);U(omega)(teta))"
+
+og2 = []
+-}
+
+p1 = "U(*(*(alfa);beta;omega;gama;U(psi)(fi);*(U(alef)(delta))))(alfa)"
+
+g1 = [[["beta"], ["gama"], ["psi"]], [["alfa"]], [["alfa", "1", "2"], ["beta"], ["omega"], ["gama"], ["psi"]], []]
+
+p2 = "beta;U(alfa)(teta)"
+
+g2 = [[["beta"], ["psi"]]]
 
 splitChildren :: String -> [String]
 splitChildren str = go 0 "" 0 str
@@ -106,12 +125,12 @@ concatena1 a
     | length a >= 2 = [removeParenthesis (head a)] ++ tail a
     | otherwise = [removeParenthesis (head a)]
  
-nonDetChoice :: [String] -> [[String]] -> Bool
+nonDetChoice :: [String] -> [[String]] -> (Bool, [String])
 --nonDetChoice _ [] = False
 nonDetChoice p g
-    | verify (head p) (g) == True = True -- -> verify ("(gama;U(omega)(teta))") (graph)
-    | verify (head (tail p)) (g) == True = True
-    | otherwise = False
+    | verify (head p) (g) == (True, [""]) = verify (head p) (g)--(True, [""])  -- -> verify ("(gama;U(omega)(teta))") (graph)
+    | verify (head (tail p)) (g) == (True, [""]) = verify (head (tail p)) (g)--(True, [""])
+    | otherwise = verify (head p) (g)
 
 removeParenthesis :: String -> String
 removeParenthesis a
@@ -132,39 +151,64 @@ multiplica n pfch
     | n == 1 && length pfch < 2 = (head pfch) ++ (multiplica (n - 1) pfch)
     | otherwise = (head pfch) ++ ";" ++ (multiplica (n - 1) pfch)
 
-fecho :: Int -> [String] -> [[String]] -> Bool
+fecho :: Int -> [String] -> [[String]] -> (Bool, [String])
 --fecho (-1) pfch g = False
 --fecho 0 pfch g = verify (multiplica (0) (pfch)) (g)
 fecho n pfch g
-    | n == (-1) = False
-    | verify (multiplica (n) (pfch)) g == True = True
+    | n == (0) = verify (multiplica (0) (pfch)) (g)
+    | verify (multiplica (n) (pfch)) g == (True, [""]) = verify (multiplica (n) (pfch)) g
     | otherwise = fecho (n - 1) (pfch) (g)
 
 aaa :: [[String]] -> [[String]]
 aaa [] = [["", "", ""]]
 aaa a = a
 
-verify :: String -> [[String]] -> Bool
-verify "" [] = True
+ccc :: [[String]] -> [String]
+ccc [] = ["", "", ""]
+ccc c = head c
+
+verify :: String -> [[String]] -> (Bool, [String])
+verify "" [] = (True, [""])
 --verify "" [["", "", ""]] = True
 --verify "" _ = False
 --verify p [[]] = verify (p) ([["", "", ""]])
-verify "" _ =  False
+verify "" g =  (False, (head g))
 verify p g
     | hd p == "*" = fecho (length g) (concatena1(splitChildren1 (tail p))) g
     | hd p == "U" = nonDetChoice (concatena (splitChildren (tail p))) (g) -- -> nonDetChoice ["(gama;U(omega)(teta))","(alfa;gama;bunta)"] graph
 --    | head (splitOn ";" p) == head (splitOn ";" g) = verify (tl(tail (splitOn ";" p))) (tl(tail (splitOn ";" g))) 
     | head (splitOn ";" p) == head (head (aaa g)) = verify (tl(tail (splitOn ";" p))) (tail g)
-    | otherwise = False
+    | otherwise = (False, (ccc g))
 
+get :: (Bool, [String]) -> Bool
+get (a, b) = a
 
+sumTuple :: (Int) -> (Int)
+sumTuple (a) = (a+1)
     
-verifyOuter :: Int -> String -> [[[String]]] -> Bool
-verifyOuter 0 p [] = verify (p) []
-verifyOuter 1 p [] = False
-verifyOuter _ p gL
-    | verify (p) (head gL) == True = True
-    | otherwise = verifyOuter (1) (p) (tail gL)
+verifyOuter :: (Int) -> Int -> String -> [[[String]]] -> [((Int), (Bool, [String]))]
+verifyOuter _ 0 p [] = []
+verifyOuter i 1 p [] = []
+verifyOuter i _ p gL
+    | get (verify (p) (head gL)) == True = [(i, verify (p) (head gL))] ++ verifyOuter (i+1) (1) p (tail gL)
+    | get (verify (p) (head gL)) == False = [(i, verify (p) (head gL))] ++ verifyOuter (i+1) (1) p (tail gL)
+--    | otherwise = verifyOuter (1) (p) (tail gL)
+
+getB :: ((Int), (Bool, [String])) -> Bool
+getB ((i), (b, s)) = b
+
+getI :: ((Int), (Bool, [String])) -> String
+getI ((i), (b, s)) = show i
+
+getS :: ((Int), (Bool, [String])) -> [String]
+getS ((i), (b, s)) = s
+
+
+printer :: [((Int), (Bool, [String]))] -> [String]
+printer [] = [""]
+printer w
+    | getB (head w) == True = ["O grafo eh valido pois eh satisfeito para o caminho numero " ++ getI (head w)]
+    | getB (head w) == False = ["O grafo "]
 
 -- concatena1(splitChildren1(tail pdlFT))   ->     ["alfa"]
 
@@ -172,5 +216,6 @@ verifyOuter _ p gL
 
 main :: IO ()
 main = do
+    putStrLn (head (printer (verifyOuter (0) (0) p1 g1)))
     putStrLn "hello"
     putStrLn "world"
